@@ -1,0 +1,19 @@
+{
+  "name": "bensordaten",
+  "version": "1.0.0",
+  "description": "School project 2nd year",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nils Simon / Niklas Schraff",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "jquery": "^3.7.1",
+    "mysql2": "^3.9.7"
+  }
+}
