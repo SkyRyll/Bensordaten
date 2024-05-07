@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const session = require("express-session");
+const mqtt = require("mqtt");
 const mysql = require("mysql2");
 const md5 = require("md5");
 const bodyParser = require("body-parser");
@@ -14,6 +15,8 @@ const dbUser = "root";
 const dbPass = "root";
 const dbDatabase = "bensordaten";
 const nodeAppPort = 3000;
+const mqttBroker = 'mqtt://broker.hivemq.com:1883';
+const mqttTopic = 'EST/EFI222/NSNS';
 
 // expose static path
 app.use(express.static("static"));
@@ -51,6 +54,42 @@ connection.connect(function (error) {
     if (error) throw error;
     else console.log("connection to database successful");
 });
+
+// Connect to MQTT broker
+const mqttClient = mqtt.connect(mqttBroker);
+
+// Subscribe to MQTT topic
+mqttClient.on('connect', () => {
+    console.log('Connected to MQTT broker');
+    mqttClient.subscribe(mqttTopic);
+});
+
+// MQTT message handler
+mqttClient.on('message', (topic, message) => {
+    const trash = topic
+
+    const data = JSON.parse(message)
+
+    const temperature = data.temperature;
+    const humidity = data.humidity;
+    const altitude = data.altitude;
+    const pressure = data.pressure;
+
+    const query = 'INSERT INTO measurements (timestamp, temperature, humidity, altitude, pressure) VALUES (now(), ?, ?, ? ,?)';
+    connection.query(query, [temperature, humidity, altitude, pressure], (err, result) => {
+        if (err) {
+            console.error('Error inserting data into database:', err);
+        } else {
+            console.log('Data inserted into database');
+        }
+    });
+});
+
+// Handle errors
+mqttClient.on('error', (err) => {
+    console.error('MQTT error:', err);
+});
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -169,6 +208,18 @@ function get_error(req, res, errorMessage) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+app.get("/getGraphData", (req, res) => {
+    const query = "SELECT * FROM measurements";
+    connection.query(query, (err, result) => {
+        if (err) {
+            console.error("Database query error: " + err.message);
+            res.status(500).json({ error: "Internal Server Error" });
+        } else {
+            res.json(result);
+        }
+    });
+});
 
 //login check and redirect
 app.post(
