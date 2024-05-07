@@ -98,6 +98,11 @@ app.get("/", (req, res) => {
     get_index(req, res);
 });
 
+app.get("/graph", (req, res) => {
+    get_graph(req, res);
+});
+
+
 app.get("/account", (req, res) => {
     get_account(req, res);
 });
@@ -122,6 +127,12 @@ app.get("/error", (req, res) => {
 
 function get_index(req, res) {
     res.render("pages/index", {
+        loggedin: req.session.loggedin,
+    });
+}
+
+function get_graph(req, res) {
+    res.render("pages/graph", {
         loggedin: req.session.loggedin,
     });
 }
@@ -210,7 +221,7 @@ function get_error(req, res, errorMessage) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 app.get("/getGraphData", (req, res) => {
-    const query = "SELECT * FROM measurements";
+    const query = "SELECT * FROM (SELECT * FROM measurements ORDER BY timestamp DESC LIMIT 30) AS subquery ORDER BY measurement_id ASC;";
     connection.query(query, (err, result) => {
         if (err) {
             console.error("Database query error: " + err.message);
