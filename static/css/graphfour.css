@@ -1,0 +1,13 @@
+.center-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.first-col-container {
+    width: 43%;
+}
+
+.second-col-container {
+    width: 43%;
+}

@@ -15,8 +15,8 @@ const dbUser = "root";
 const dbPass = "root";
 const dbDatabase = "bensordaten";
 const nodeAppPort = 3000;
-const mqttBroker = 'mqtt://broker.hivemq.com:1883';
-const mqttTopic = 'EST/EFI222/NSNS';
+const mqttBroker = "mqtt://broker.hivemq.com:1883";
+const mqttTopic = "EST/EFI222/NSNS";
 
 // expose static path
 app.use(express.static("static"));
@@ -59,37 +59,36 @@ connection.connect(function (error) {
 const mqttClient = mqtt.connect(mqttBroker);
 
 // Subscribe to MQTT topic
-mqttClient.on('connect', () => {
-    console.log('Connected to MQTT broker');
+mqttClient.on("connect", () => {
+    console.log("Connected to MQTT broker");
     mqttClient.subscribe(mqttTopic);
 });
 
 // MQTT message handler
-mqttClient.on('message', (topic, message) => {
-    const trash = topic
+mqttClient.on("message", (topic, message) => {
+    const trash = topic;
 
-    const data = JSON.parse(message)
+    const data = JSON.parse(message);
 
     const temperature = data.temperature;
     const humidity = data.humidity;
     const altitude = data.altitude;
     const pressure = data.pressure;
 
-    const query = 'INSERT INTO measurements (timestamp, temperature, humidity, altitude, pressure) VALUES (now(), ?, ?, ? ,?)';
+    const query = "INSERT INTO measurements (timestamp, temperature, humidity, altitude, pressure) VALUES (now(), ?, ?, ? ,?)";
     connection.query(query, [temperature, humidity, altitude, pressure], (err, result) => {
         if (err) {
-            console.error('Error inserting data into database:', err);
+            console.error("Error inserting data into database:", err);
         } else {
-            console.log('Data inserted into database');
+            console.log("Data inserted into database");
         }
     });
 });
 
 // Handle errors
-mqttClient.on('error', (err) => {
-    console.error('MQTT error:', err);
+mqttClient.on("error", (err) => {
+    console.error("MQTT error:", err);
 });
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -102,6 +101,9 @@ app.get("/graph", (req, res) => {
     get_graph(req, res);
 });
 
+app.get("/graphfour", (req, res) => {
+    get_graphfour(req, res);
+});
 
 app.get("/account", (req, res) => {
     get_account(req, res);
@@ -132,9 +134,23 @@ function get_index(req, res) {
 }
 
 function get_graph(req, res) {
-    res.render("pages/graph", {
-        loggedin: req.session.loggedin,
-    });
+    if (req.session.loggedin) {
+        res.render("pages/graph", {
+            loggedin: req.session.loggedin,
+        });
+    } else {
+        res.redirect("/login");
+    }
+}
+
+function get_graphfour(req, res) {
+    if (req.session.loggedin) {
+        res.render("pages/graphfour", {
+            loggedin: req.session.loggedin,
+        });
+    } else {
+        res.redirect("/login");
+    }
 }
 
 function get_account(req, res) {
@@ -157,7 +173,7 @@ function show_account(req, res, user_id) {
             user = results[0];
 
             //don't supply password hash ;)
-            delete user.password;
+            delete user.hash;
             res.render("pages/account", {
                 user: user,
                 loggedin: req.session.loggedin,
@@ -221,7 +237,7 @@ function get_error(req, res, errorMessage) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 app.get("/getGraphData", (req, res) => {
-    const query = "SELECT * FROM (SELECT * FROM measurements ORDER BY timestamp DESC LIMIT 30) AS subquery ORDER BY measurement_id ASC;";
+    const query = "SELECT * FROM (SELECT * FROM measurements ORDER BY timestamp DESC LIMIT 60) AS subquery ORDER BY measurement_id ASC;";
     connection.query(query, (err, result) => {
         if (err) {
             console.error("Database query error: " + err.message);
